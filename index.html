@@ -1260,25 +1260,32 @@
   window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault();
     installPrompt = e;
-    // Show banner after 3 seconds on the site
-    setTimeout(() => {
-      if (installPrompt && !window.matchMedia('(display-mode: standalone)').matches) {
-        $('#installBanner').classList.remove('hidden');
-      }
-    }, 3000);
+    // Show banner as soon as prompt is available
+    if (!window.matchMedia('(display-mode: standalone)').matches) {
+      $('#installBanner').classList.remove('hidden');
+    }
   });
 
-  document.getElementById('btnInstall').addEventListener('click', async () => {
-    if (!installPrompt) {
-      showToast('安装提示未就绪，请通过浏览器菜单添加');
-      return;
+  // Fallback: also show banner after 2s even if prompt not ready yet
+  setTimeout(() => {
+    if (!window.matchMedia('(display-mode: standalone)').matches && !installPrompt) {
+      $('#installBanner').classList.remove('hidden');
     }
-    installPrompt.prompt();
-    const result = await installPrompt.userChoice;
-    installPrompt = null;
-    $('#installBanner').classList.add('hidden');
-    if (result.outcome === 'accepted') {
-      showToast('安装成功！🎉');
+  }, 2000);
+
+  document.getElementById('btnInstall').addEventListener('click', async () => {
+    if (installPrompt) {
+      installPrompt.prompt();
+      const result = await installPrompt.userChoice;
+      installPrompt = null;
+      $('#installBanner').classList.add('hidden');
+      if (result.outcome === 'accepted') {
+        showToast('安装成功！🎉');
+      }
+    } else {
+      // Fallback: show manual instructions
+      alert('请通过浏览器菜单添加：\n\n• 点右上角 ⋮ 或底部 …\n• 选择"添加到主屏幕"\n• 确认添加\n\n添加后桌面会出现"今日记账"图标');
+      $('#installBanner').classList.add('hidden');
     }
   });
 
@@ -1286,14 +1293,12 @@
     $('#installBanner').classList.add('hidden');
   });
 
-  // Listen for external install trigger (Chrome menu, etc.)
   window.addEventListener('appinstalled', () => {
     installPrompt = null;
     $('#installBanner').classList.add('hidden');
     showToast('安装成功！🎉');
   });
 
-  // Hide install banner if already in standalone mode
   if (window.matchMedia('(display-mode: standalone)').matches) {
     installPrompt = null;
   }
