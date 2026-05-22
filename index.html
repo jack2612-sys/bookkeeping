@@ -482,51 +482,6 @@
     }
     .toast.show { opacity: 1; }
 
-    /* Install banner */
-    .install-banner {
-      position: fixed;
-      bottom: 80px;
-      left: 16px;
-      right: 16px;
-      background: #1F2937;
-      color: #fff;
-      padding: 14px 16px;
-      border-radius: var(--radius);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      z-index: 45;
-      box-shadow: 0 10px 30px rgba(0,0,0,.3);
-      animation: slideUp .3s ease;
-      max-width: 448px;
-      margin: 0 auto;
-    }
-    @keyframes slideUp {
-      from { transform: translateY(20px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-    .install-banner.hidden { display: none; }
-    .install-banner .install-text { flex: 1; font-size: 14px; line-height: 1.4; }
-    .install-banner .install-btn {
-      background: var(--primary);
-      color: #fff;
-      border: none;
-      padding: 8px 18px;
-      border-radius: 20px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-    .install-banner .install-close {
-      background: none;
-      border: none;
-      color: #9CA3AF;
-      font-size: 20px;
-      cursor: pointer;
-      padding: 0 4px;
-    }
-
     /* Modal */
     .modal-overlay {
       position: fixed;
@@ -643,12 +598,6 @@
   </div>
 
   <div class="toast" id="toast"></div>
-  <div class="install-banner hidden" id="installBanner">
-    <span style="font-size:24px;">📲</span>
-    <span class="install-text">添加到桌面<br><span style="font-size:11px;opacity:0.7;">像APP一样使用，无需联网</span></span>
-    <button class="install-btn" id="btnInstall">立即添加</button>
-    <button class="install-close" id="btnInstallClose">×</button>
-  </div>
 
   <!-- 设置弹窗 -->
   <div class="modal-overlay hidden" id="settingsModal">
@@ -673,6 +622,11 @@
         <input class="form-input" id="inputNewAcctName" type="text" placeholder="账户名称" style="flex:1;">
         <input class="form-input" id="inputNewAcctIcon" type="text" placeholder="图标" style="width:60px;flex:none;" maxlength="2">
         <button class="btn-primary" style="width:auto;padding:12px 16px;font-size:14px;" id="btnAddAcct">添加</button>
+      </div>
+      <div style="background:#FEF3C7;border-radius:var(--radius-sm);padding:14px;margin-top:16px;text-align:center;">
+        <div style="font-size:14px;font-weight:600;margin-bottom:8px;">📲 添加到手机桌面</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:10px;">像原生APP一样，桌面直达</div>
+        <button class="btn-primary" id="btnInstall" style="font-size:14px;padding:10px 30px;">一键安装</button>
       </div>
       <div class="modal-actions">
         <button class="btn-primary" style="background:var(--bg);color:var(--text);box-shadow:none;" id="btnCloseSettings">关闭</button>
@@ -1260,48 +1214,40 @@
   window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault();
     installPrompt = e;
-    // Show banner as soon as prompt is available
-    if (!window.matchMedia('(display-mode: standalone)').matches) {
-      $('#installBanner').classList.remove('hidden');
-    }
   });
-
-  // Fallback: also show banner after 2s even if prompt not ready yet
-  setTimeout(() => {
-    if (!window.matchMedia('(display-mode: standalone)').matches && !installPrompt) {
-      $('#installBanner').classList.remove('hidden');
-    }
-  }, 2000);
 
   document.getElementById('btnInstall').addEventListener('click', async () => {
     if (installPrompt) {
       installPrompt.prompt();
       const result = await installPrompt.userChoice;
-      installPrompt = null;
-      $('#installBanner').classList.add('hidden');
       if (result.outcome === 'accepted') {
         showToast('安装成功！🎉');
+      } else {
+        showToast('已取消');
       }
+      installPrompt = null;
     } else {
-      // Fallback: show manual instructions
-      alert('请通过浏览器菜单添加：\n\n• 点右上角 ⋮ 或底部 …\n• 选择"添加到主屏幕"\n• 确认添加\n\n添加后桌面会出现"今日记账"图标');
-      $('#installBanner').classList.add('hidden');
+      // Manual instructions
+      const ua = navigator.userAgent;
+      let tip = '';
+      if (ua.includes('Edg')) {
+        tip = 'Edge浏览器：\n底部菜单 … → 添加到手机';
+      } else if (ua.includes('Chrome')) {
+        tip = 'Chrome浏览器：\n右上角 ⋮ → 添加到主屏幕';
+      } else if (ua.includes('Safari') && !ua.includes('Chrome')) {
+        tip = 'Safari浏览器：\n底部中间 分享按钮 → 添加到主屏幕';
+      } else {
+        tip = '浏览器菜单中 → 添加到主屏幕/桌面';
+      }
+      alert('请通过浏览器菜单安装：\n\n' + tip + '\n\n安装后桌面出现"今日记账"图标');
     }
-  });
-
-  document.getElementById('btnInstallClose').addEventListener('click', () => {
-    $('#installBanner').classList.add('hidden');
+    $('#settingsModal').classList.add('hidden');
   });
 
   window.addEventListener('appinstalled', () => {
     installPrompt = null;
-    $('#installBanner').classList.add('hidden');
     showToast('安装成功！🎉');
   });
-
-  if (window.matchMedia('(display-mode: standalone)').matches) {
-    installPrompt = null;
-  }
 
   // ===== SERVICE WORKER =====
   if ('serviceWorker' in navigator) {
