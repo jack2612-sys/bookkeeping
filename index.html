@@ -530,10 +530,7 @@
   <div id="app">
     <header class="header">
       <span class="header-title">今日记账</span>
-      <div style="display:flex;gap:8px;">
-        <button class="header-btn" id="btnInstallHeader" title="安装到桌面" style="font-size:14px;width:auto;padding:0 12px;border-radius:16px;">📲安装</button>
-        <button class="header-btn" id="btnSettings" title="设置">⚙</button>
-      </div>
+      <button class="header-btn" id="btnSettings" title="设置">⚙</button>
     </header>
 
     <div class="main" id="mainContent">
@@ -1204,53 +1201,6 @@
     // Init
     renderBills();
     document.getElementById('inputDate').value = today();
-  }
-
-  // ===== PWA INSTALL =====
-  let installPrompt = null;
-
-  window.addEventListener('beforeinstallprompt', e => {
-    e.preventDefault();
-    installPrompt = e;
-  });
-
-  function doInstall() {
-    if (installPrompt) {
-      installPrompt.prompt();
-      installPrompt.userChoice.then(result => {
-        if (result.outcome === 'accepted') {
-          showToast('安装成功！🎉');
-          document.getElementById('btnInstallHeader').style.display = 'none';
-        }
-        installPrompt = null;
-      });
-    } else {
-      const ua = navigator.userAgent;
-      let tip = '';
-      if (ua.includes('Edg')) {
-        tip = 'Edge浏览器：\n底部菜单 … → 添加到手机';
-      } else if (ua.includes('Chrome')) {
-        tip = 'Chrome浏览器：\n右上角 ⋮ → 添加到主屏幕';
-      } else if (ua.includes('Safari') && !ua.includes('Chrome')) {
-        tip = 'Safari浏览器：\n底部中间 分享按钮 → 添加到主屏幕';
-      } else {
-        tip = '浏览器菜单中 → 添加到主屏幕/桌面';
-      }
-      alert('请通过浏览器菜单安装：\n\n' + tip + '\n\n安装后桌面出现"今日记账"图标');
-    }
-  }
-
-  document.getElementById('btnInstallHeader').addEventListener('click', doInstall);
-
-  window.addEventListener('appinstalled', () => {
-    installPrompt = null;
-    document.getElementById('btnInstallHeader').style.display = 'none';
-    showToast('安装成功！🎉');
-  });
-
-  // Hide install button if already running as standalone
-  if (window.matchMedia('(display-mode: standalone)').matches) {
-    document.getElementById('btnInstallHeader').style.display = 'none';
   }
 
   // ===== SERVICE WORKER =====
